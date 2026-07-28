@@ -902,6 +902,7 @@ a:hover {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-lg);
+  align-items: stretch;
 }
 
 .card {
@@ -910,6 +911,9 @@ a:hover {
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .card-title {
