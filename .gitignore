@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Database (generated at runtime)
+server/data/scholarships.db
+
+# Environment
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*

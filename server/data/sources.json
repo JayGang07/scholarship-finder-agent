@@ -1,0 +1,66 @@
+[
+  {
+    "country": "Germany",
+    "provider": "DAAD",
+    "name": "DAAD Scholarship Database",
+    "url": "https://www.daad.de/en/study-and-research-in-germany/scholarships/",
+    "type": "html",
+    "description": "German Academic Exchange Service — largest scholarship provider for Germany"
+  },
+  {
+    "country": "Germany",
+    "provider": "Deutschlandstipendium",
+    "name": "Deutschland Stipendium",
+    "url": "https://www.deutschlandstipendium.de/deutschlandstipendium/de/services/english/english_node.html",
+    "type": "html",
+    "description": "Germany's national scholarship programme — merit-based, 300 EUR/month"
+  },
+  {
+    "country": "United States",
+    "provider": "Fulbright",
+    "name": "Fulbright Foreign Student Program",
+    "url": "https://foreign.fulbrightonline.org/about/foreign-student-program",
+    "type": "html",
+    "description": "US government flagship international exchange program"
+  },
+  {
+    "country": "United States",
+    "provider": "EducationUSA",
+    "name": "EducationUSA Scholarships",
+    "url": "https://educationusa.state.gov/find-financial-aid",
+    "type": "html",
+    "description": "US Department of State's scholarship and financial aid directory"
+  },
+  {
+    "country": "United Kingdom",
+    "provider": "Chevening",
+    "name": "Chevening Scholarships",
+    "url": "https://www.chevening.org/scholarships/",
+    "type": "html",
+    "description": "UK government global scholarship programme — fully funded Master's"
+  },
+  {
+    "country": "Canada",
+    "provider": "Vanier CGS",
+    "name": "Vanier Canada Graduate Scholarships",
+    "url": "https://vanier.gc.ca/en/home-accueil.html",
+    "type": "html",
+    "description": "Canada's premier graduate scholarship — $50,000/year for 3 years"
+  },
+  {
+    "country": "United States",
+    "provider": "Hubert H. Humphrey",
+    "name": "Humphrey Fellowship Program",
+    "url": "https://www.humphreyfellowship.org/",
+    "type": "html",
+    "description": "US exchange program for experienced professionals — fully funded"
+  },
+  {
+    "country": "Germany",
+    "provider": "Heinrich Böll Foundation",
+    "name": "Heinrich Böll Scholarships",
+    "url": "https://www.boell.de/en/foundation/application",
+    "type": "html",
+    "description": "German political foundation scholarships for graduate students"
+  }
+]

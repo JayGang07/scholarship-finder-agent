@@ -1,0 +1,16 @@
+{
+  "name": "scholarship-finder",
+  "version": "1.0.0",
+  "description": "AI-powered scholarship finder agent — scrapes curated sources, matches to your profile, delivers a weekly digest",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "dependencies": {
+    "sql.js": "^1.11.0",
+    "express": "^4.21.0",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.0"
+  }
+}
