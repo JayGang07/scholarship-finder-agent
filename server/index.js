@@ -40,7 +40,7 @@ async function start() {
   await db.initDb();
 
   // Cron scheduler
-  const cronSchedule = process.env.CRON_SCHEDULE || '0 9 * * 1';
+  const cronSchedule = process.env.CRON_SCHEDULE || '0 9 * * *';
   if (cron.validate(cronSchedule)) {
     cron.schedule(cronSchedule, async () => {
       console.log(`\n[Cron] Scheduled cycle running at ${new Date().toISOString()}`);

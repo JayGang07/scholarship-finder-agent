@@ -12,7 +12,7 @@
 <br/>
 
 *Scholarship money goes unclaimed because eligible students never see the listing in time.*  
-*This agent fixes that — it finds, matches, tracks, and delivers scholarship opportunities to your inbox every week.*
+*This agent fixes that — it finds, matches, tracks, and delivers scholarship opportunities to your inbox every day.*
 
 <br/>
 
@@ -24,7 +24,7 @@
 
 ## 🧠 What This Agent Does
 
-Every cycle (weekly by default), with **zero manual searching** after initial setup:
+Every cycle (daily by default), with **zero manual searching** after initial setup:
 
 | # | Capability | Implementation |
 |:-:|---|---|
@@ -72,7 +72,7 @@ cp .env.example .env
 | `SMTP_USER` | ❌ | — |
 | `SMTP_PASS` | ❌ | — |
 | `RECIPIENT_EMAIL` | ❌ | Defaults to `SMTP_USER` |
-| `CRON_SCHEDULE` | ❌ | `0 9 * * 1` (Mon 9 AM) |
+| `CRON_SCHEDULE` | ❌ | `0 9 * * *` (Every day at 9 AM) |
 
 ---
 
