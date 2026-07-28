@@ -96,8 +96,7 @@ async function runCycle() {
         await sendDigest(recipient, html);
         db.markSent(toInclude.map((s) => {
           // Find the ID from the DB after upsert
-          const row = db.getDb().prepare('SELECT id FROM scholarships WHERE name = ? AND provider = ?')
-            .get(s.name, s.provider);
+          const row = db.queryOne('SELECT id FROM scholarships WHERE name = ? AND provider = ?', [s.name, s.provider]);
           return row ? row.id : null;
         }).filter(Boolean));
       }

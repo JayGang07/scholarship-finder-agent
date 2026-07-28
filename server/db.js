@@ -301,4 +301,5 @@ module.exports = {
   markDeadlinesPassed,
   createRunLog,
   updateRunLog,
+  queryOne,
 };

@@ -17,7 +17,6 @@ const db = require('../db');
  * Returns { toInclude: [...], skipped: number }
  */
 function dedup(scholarships) {
-  const d = db.getDb();
   const now = new Date();
   const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -25,7 +24,7 @@ function dedup(scholarships) {
   // Mark any expired deadlines first
   db.markDeadlinesPassed();
 
-  const existing = d.prepare('SELECT * FROM scholarships').all();
+  const existing = db.getAllScholarships();
   const existingMap = new Map(
     existing.map((s) => [`${normalize(s.name)}|${normalize(s.provider)}`, s])
   );
