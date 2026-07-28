@@ -26,10 +26,7 @@ router.post('/send', async (req, res) => {
   const scholarships = db.getAllScholarships({ status: 'Active' });
   const html = composeDigest(scholarships, profile);
 
-  const recipient = process.env.RECIPIENT_EMAIL || process.env.SMTP_USER || '';
-  if (!recipient) {
-    return res.status(400).json({ error: 'No recipient email configured (set RECIPIENT_EMAIL in .env)' });
-  }
+  const recipient = process.env.RECIPIENT_EMAIL || process.env.SMTP_USER || 'demo@example.com';
 
   const result = await sendDigest(recipient, html);
 
