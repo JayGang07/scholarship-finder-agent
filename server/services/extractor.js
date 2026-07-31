@@ -18,7 +18,7 @@ const EXTRACTION_PROMPT = `You are a scholarship data extraction assistant. Extr
 - fundingType (string): "Full tuition", "Partial tuition", "Living stipend", or "Other"
 - amount (string): funding amount/details
 - deadline (string): application deadline in YYYY-MM-DD format if possible, otherwise as stated
-- requiredDocuments (string): comma-separated list of required documents
+- documentsChecklist (string): comma-separated list of required documents
 - eligibilityText (string): full eligibility criteria as stated
 - applicationLink (string): direct application URL if found in the text
 

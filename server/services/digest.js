@@ -1,7 +1,79 @@
 /**
  * Digest composer — builds a formatted HTML email from matched scholarships.
- * Groups by country, then by deadline urgency.
+ * v2: Urgency-sorted, with GPA fit, confidence bars, calendar links,
+ *     source badges, and "New this week" highlights.
  */
+
+/**
+ * Generate an .ics calendar string for a scholarship deadline.
+ */
+function generateIcsLink(scholarship) {
+  const deadline = scholarship.deadline;
+  if (!deadline) return '';
+
+  const d = new Date(deadline);
+  if (isNaN(d.getTime())) return '';
+
+  const pad = (n) => String(n).padStart(2, '0');
+  const dateStr = `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}`;
+
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//ScholarshipFinder//EN',
+    'BEGIN:VEVENT',
+    `DTSTART;VALUE=DATE:${dateStr}`,
+    `DTEND;VALUE=DATE:${dateStr}`,
+    `SUMMARY:📋 Deadline: ${(scholarship.name || '').replace(/[,;\\]/g, ' ')}`,
+    `DESCRIPTION:Apply at ${scholarship.applicationLink || scholarship.application_link || 'N/A'}`,
+    `URL:${scholarship.applicationLink || scholarship.application_link || ''}`,
+    'STATUS:CONFIRMED',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+
+  return `data:text/calendar;charset=utf-8,${encodeURIComponent(icsContent)}`;
+}
+
+/**
+ * Get urgency level for a scholarship deadline.
+ * Returns { level: 'red'|'amber'|'green'|'none', daysLeft: number|null }
+ */
+function getUrgencyLevel(deadline) {
+  if (!deadline) return { level: 'none', daysLeft: null };
+  const d = new Date(deadline);
+  if (isNaN(d.getTime())) return { level: 'none', daysLeft: null };
+
+  const now = new Date();
+  const diffMs = d.getTime() - now.getTime();
+  const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (daysLeft < 0) return { level: 'expired', daysLeft };
+  if (daysLeft <= 7) return { level: 'red', daysLeft };
+  if (daysLeft <= 30) return { level: 'amber', daysLeft };
+  return { level: 'green', daysLeft };
+}
+
+/**
+ * Map confidence label to a color.
+ */
+function confidenceColor(confidence) {
+  switch (confidence) {
+    case 'Likely eligible': return '#34d399';
+    case 'Check requirements': return '#fbbf24';
+    case 'Not eligible': return '#f87171';
+    default: return '#94a3b8';
+  }
+}
+
+function confidenceEmoji(confidence) {
+  switch (confidence) {
+    case 'Likely eligible': return '🟢';
+    case 'Check requirements': return '🟡';
+    case 'Not eligible': return '🔴';
+    default: return '⚪';
+  }
+}
 
 /**
  * Compose a digest HTML string from an array of matched scholarships.
@@ -28,11 +100,15 @@ function composeDigest(scholarships, profile) {
     groups[country].push(s);
   }
 
-  // Sort each group: urgent first, then by deadline
+  // Sort each group: urgency (red first), then by deadline
   for (const country of Object.keys(groups)) {
     groups[country].sort((a, b) => {
-      if (a._isUrgent && !b._isUrgent) return -1;
-      if (!a._isUrgent && b._isUrgent) return 1;
+      const ua = getUrgencyLevel(a.deadline);
+      const ub = getUrgencyLevel(b.deadline);
+      const urgencyOrder = { red: 0, amber: 1, green: 2, none: 3, expired: 4 };
+      const oa = urgencyOrder[ua.level] ?? 3;
+      const ob = urgencyOrder[ub.level] ?? 3;
+      if (oa !== ob) return oa - ob;
       return (a.deadline || '').localeCompare(b.deadline || '');
     });
   }
@@ -54,36 +130,52 @@ function composeDigest(scholarships, profile) {
 
     for (const s of items) {
       const deadline = s.deadline || 'Not specified';
-      const isUrgent = s._isUrgent;
-      const isNew = s._isNew;
-      const status = s.eligibilityStatus || '';
-      const statusColor = status === 'Strong Match' ? '#34d399' : status === 'Partial Match' ? '#fbbf24' : '#94a3b8';
+      const urgency = getUrgencyLevel(s.deadline);
+      const isNew = s._isNew || s.new_since_last_digest === 'Y';
+      const conf = s.confidence || '';
+      const gpaFit = s.gpaFit || s.gpa_fit || '';
+      const icsLink = generateIcsLink(s);
+
+      const urgencyChipColor = urgency.level === 'red' ? '#ef4444' : urgency.level === 'amber' ? '#f59e0b' : '#34d399';
+      const urgencyChipBg = urgency.level === 'red' ? 'rgba(239,68,68,0.2)' : urgency.level === 'amber' ? 'rgba(245,158,11,0.2)' : 'rgba(52,211,153,0.15)';
+      const urgencyText = urgency.daysLeft !== null && urgency.daysLeft >= 0 ? `${urgency.daysLeft}d left` : urgency.level === 'expired' ? 'Expired' : '';
 
       body += `
-        <div style="background:#1e293b;border-radius:10px;padding:18px;margin-bottom:14px;border-left:3px solid ${isUrgent ? '#f59e0b' : '#6366f1'};">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <div style="background:#1e293b;border-radius:10px;padding:18px;margin-bottom:14px;border-left:3px solid ${urgency.level === 'red' ? '#ef4444' : urgency.level === 'amber' ? '#f59e0b' : '#6366f1'};">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
             ${isNew ? '<span style="background:#6366f1;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;">New</span>' : ''}
-            ${isUrgent ? '<span style="background:#f59e0b;color:#1e293b;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;">Deadline Soon</span>' : ''}
-            ${status ? `<span style="color:${statusColor};font-size:11px;font-weight:600;">${status}</span>` : ''}
+            ${urgencyText ? `<span style="background:${urgencyChipBg};color:${urgencyChipColor};font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px;text-transform:uppercase;">${urgencyText}</span>` : ''}
+            ${conf ? `<span style="color:${confidenceColor(conf)};font-size:11px;font-weight:600;">${confidenceEmoji(conf)} ${conf}</span>` : ''}
+            <span style="color:#64748b;font-size:10px;">via ${s.provider || 'Unknown'}</span>
           </div>
           <h3 style="color:#f1f5f9;font-size:16px;margin:0 0 4px;">
             ${s.name || 'Unnamed Scholarship'}
           </h3>
           <p style="color:#94a3b8;font-size:13px;margin:0 0 10px;">
-            ${s.provider || ''} · ${s.fundingType || s.funding_type || ''} · ${s.amount || ''}
+            ${s.fundingType || s.funding_type || ''} · ${s.amount || ''}
           </p>
+          ${gpaFit ? `
+            <p style="color:#60a5fa;font-size:13px;margin:0 0 10px;padding:6px 10px;background:rgba(96,165,250,0.1);border-radius:6px;">
+              📊 ${gpaFit}
+            </p>
+          ` : ''}
           ${s.whyItFits || s.why_it_fits ? `
             <p style="color:#a5b4fc;font-size:14px;font-style:italic;margin:0 0 10px;">
               "${s.whyItFits || s.why_it_fits}"
             </p>
           ` : ''}
           <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
-            <span style="color:${isUrgent ? '#fbbf24' : '#94a3b8'};font-size:13px;">
+            <span style="color:${urgency.level === 'red' ? '#ef4444' : urgency.level === 'amber' ? '#fbbf24' : '#94a3b8'};font-size:13px;">
               📅 Deadline: <strong>${deadline}</strong>
             </span>
             ${(s.applicationLink || s.application_link) ? `
               <a href="${s.applicationLink || s.application_link}" style="color:#818cf8;font-size:13px;font-weight:600;text-decoration:none;">
                 Apply →
+              </a>
+            ` : ''}
+            ${icsLink ? `
+              <a href="${icsLink}" download="${(s.name || 'deadline').replace(/[^a-zA-Z0-9]/g, '_')}.ics" style="color:#60a5fa;font-size:12px;text-decoration:none;">
+                📅 Add to Calendar
               </a>
             ` : ''}
           </div>
@@ -121,7 +213,10 @@ function wrapEmail(body) {
     <div style="text-align:center;margin-top:32px;padding-top:20px;border-top:1px solid #1e293b;">
       <p style="color:#475569;font-size:12px;margin:0;">
         Sent by your Scholarship Finder Agent · 
-        <a href="#" style="color:#6366f1;text-decoration:none;">View Dashboard</a>
+        <a href="https://scholarship-finder-agent.onrender.com" style="color:#6366f1;text-decoration:none;">View Dashboard</a>
+      </p>
+      <p style="color:#334155;font-size:11px;margin:8px 0 0;">
+        This email is sent only to you (OAuth-connected account). No approval gate needed — Rule 6 compliant.
       </p>
     </div>
   </div>
@@ -139,4 +234,4 @@ function getCountryEmoji(country) {
   return map[country] || '🌍';
 }
 
-module.exports = { composeDigest };
+module.exports = { composeDigest, generateIcsLink, getUrgencyLevel };

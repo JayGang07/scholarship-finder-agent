@@ -11,7 +11,9 @@
     "requiredDocuments": "Academic transcripts, CV, Letter of motivation, Two recommendation letters, Language certificate (English B2+)",
     "eligibilityText": "Open to international students with a Bachelor's degree (minimum 2 years work experience preferred). GPA equivalent to German 'good' (approximately 3.0/4.0 or 7.5/10). Must demonstrate leadership potential.",
     "applicationLink": "https://www.daad.de/en/study-and-research-in-germany/scholarships/",
-    "whyItFits": ""
+    "gpaFit": "Your GPA ≈ 3.4/4.0 — meets the 3.0 minimum requirement",
+    "confidence": "Likely eligible",
+    "documentsChecklist": "Academic transcripts,CV,Letter of motivation,Two recommendation letters,Language certificate (English B2+)"
   },
   {
     "name": "Fulbright Foreign Student Program",
@@ -25,7 +27,9 @@
     "requiredDocuments": "Online application, Personal statement, Study objectives, Three recommendation letters, Academic transcripts, English proficiency (TOEFL/IELTS)",
     "eligibilityText": "Open to international students with a Bachelor's degree and strong academic record (typically 3.5/4.0 GPA or equivalent). Must demonstrate leadership and community engagement.",
     "applicationLink": "https://foreign.fulbrightonline.org/about/foreign-student-program",
-    "whyItFits": ""
+    "gpaFit": "Your GPA ≈ 3.4/4.0 — slightly below the typical 3.5 threshold, but strong profiles may still qualify",
+    "confidence": "Check requirements",
+    "documentsChecklist": "Online application,Personal statement,Study objectives,Three recommendation letters,Academic transcripts,English proficiency (TOEFL/IELTS)"
   },
   {
     "name": "Deutschlandstipendium (Germany Scholarship)",
@@ -39,7 +43,9 @@
     "requiredDocuments": "Academic transcripts, CV, Letter of motivation (application through enrolled university)",
     "eligibilityText": "Available to students enrolled at a German university. Based on academic merit and social engagement. No minimum GPA specified but competitive — typically above 2.0 German grade (approx 8.0/10 or 3.3/4.0).",
     "applicationLink": "https://www.deutschlandstipendium.de/deutschlandstipendium/de/services/english/english_node.html",
-    "whyItFits": ""
+    "gpaFit": "Your GPA ≈ 3.4/4.0 — exceeds the competitive 3.3 threshold",
+    "confidence": "Likely eligible",
+    "documentsChecklist": "Academic transcripts,CV,Letter of motivation"
   },
   {
     "name": "Chevening Scholarships",
@@ -53,7 +59,9 @@
     "requiredDocuments": "Online application, Personal statement (4 essays), Two references, Academic transcripts, English proficiency (IELTS 6.5+ or equivalent), Unconditional offer from UK university",
     "eligibilityText": "Minimum 2 years work experience. Bachelor's degree equivalent to UK upper second-class 2:1 honours (approximately 3.3/4.0 GPA or 8.0/10). Must return to home country for 2 years after.",
     "applicationLink": "https://www.chevening.org/scholarships/",
-    "whyItFits": ""
+    "gpaFit": "Your GPA ≈ 3.4/4.0 — meets the 3.3 (2:1) minimum requirement",
+    "confidence": "Likely eligible",
+    "documentsChecklist": "Online application,Personal statement (4 essays),Two references,Academic transcripts,English proficiency (IELTS 6.5+),Unconditional offer from UK university"
   },
   {
     "name": "Vanier Canada Graduate Scholarships",
@@ -67,7 +75,9 @@
     "requiredDocuments": "Research proposal, Academic transcripts, Two reference letters, CV, Leadership statement, Nomination by Canadian university",
     "eligibilityText": "Doctoral students only. First-class academic standing (GPA of A- or 3.7/4.0 equivalent). Must demonstrate research potential and leadership ability. Nominated through a Canadian institution.",
     "applicationLink": "https://vanier.gc.ca/en/home-accueil.html",
-    "whyItFits": ""
+    "gpaFit": "Your GPA ≈ 3.4/4.0 — below the 3.7 minimum for Vanier",
+    "confidence": "Not eligible",
+    "documentsChecklist": "Research proposal,Academic transcripts,Two reference letters,CV,Leadership statement,Nomination by Canadian university"
   },
   {
     "name": "Heinrich Böll Foundation Scholarships",
@@ -81,7 +91,9 @@
     "requiredDocuments": "Online application form, CV, Academic transcripts, Essay on political/social topic, Two recommendation letters",
     "eligibilityText": "Open to German and international students. Strong academic record expected (approx 2.5 German grade / 7.0 on 10-point scale / 3.0/4.0). Must demonstrate social/political engagement aligned with foundation values.",
     "applicationLink": "https://www.boell.de/en/foundation/application",
-    "whyItFits": ""
+    "gpaFit": "Your GPA ≈ 3.4/4.0 — exceeds the 3.0 minimum requirement",
+    "confidence": "Likely eligible",
+    "documentsChecklist": "Online application form,CV,Academic transcripts,Essay on political/social topic,Two recommendation letters"
   },
   {
     "name": "AAUW International Fellowships",
@@ -95,6 +107,8 @@
     "requiredDocuments": "Application form, Academic transcripts, Three recommendation letters, Personal statement, Proof of citizenship (non-US)",
     "eligibilityText": "For women who are not US citizens or permanent residents. Must hold equivalent of US Bachelor's degree. Strong academic record required — competitive applicants typically have 3.5+/4.0 GPA or equivalent.",
     "applicationLink": "https://www.aauw.org/resources/programs/fellowships-grants/current-opportunities/international/",
-    "whyItFits": ""
+    "gpaFit": "Your GPA ≈ 3.4/4.0 — competitive applicants typically have 3.5+; close but may need strong supporting documents",
+    "confidence": "Check requirements",
+    "documentsChecklist": "Application form,Academic transcripts,Three recommendation letters,Personal statement,Proof of citizenship (non-US)"
   }
 ]

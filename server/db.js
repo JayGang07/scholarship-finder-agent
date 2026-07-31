@@ -63,6 +63,10 @@ function initDb() {
         last_sent TEXT DEFAULT '',
         status TEXT DEFAULT 'Active',
         source_url TEXT DEFAULT '',
+        gpa_fit TEXT DEFAULT '',
+        confidence TEXT DEFAULT '',
+        new_since_last_digest TEXT DEFAULT 'Y',
+        documents_checklist TEXT DEFAULT '',
         UNIQUE(name, provider)
       )
     `);
@@ -81,6 +85,19 @@ function initDb() {
       )
     `);
 
+    db.run(`
+      CREATE TABLE IF NOT EXISTS digest_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        created_at TEXT DEFAULT (datetime('now')),
+        html TEXT NOT NULL,
+        scholarship_count INTEGER DEFAULT 0,
+        sent_to TEXT DEFAULT ''
+      )
+    `);
+
+    // --- Migration: add new columns to existing DBs ---
+    migrateSchema();
+
     // Seed scholarships if table is empty
     const countResult = db.exec('SELECT COUNT(*) as c FROM scholarships');
     const count = countResult[0]?.values[0]?.[0] || 0;
@@ -94,6 +111,38 @@ function initDb() {
   })();
 
   return dbReady;
+}
+
+function migrateSchema() {
+  // Add columns if they don't exist (safe for fresh + existing DBs)
+  const cols = getColumnNames('scholarships');
+  const migrations = [
+    { col: 'gpa_fit', sql: "ALTER TABLE scholarships ADD COLUMN gpa_fit TEXT DEFAULT ''" },
+    { col: 'confidence', sql: "ALTER TABLE scholarships ADD COLUMN confidence TEXT DEFAULT ''" },
+    { col: 'new_since_last_digest', sql: "ALTER TABLE scholarships ADD COLUMN new_since_last_digest TEXT DEFAULT 'Y'" },
+    { col: 'documents_checklist', sql: "ALTER TABLE scholarships ADD COLUMN documents_checklist TEXT DEFAULT ''" },
+  ];
+
+  for (const m of migrations) {
+    if (!cols.includes(m.col)) {
+      try {
+        db.run(m.sql);
+        console.log(`[DB] Migrated: added column '${m.col}'`);
+      } catch (err) {
+        // Column may already exist — ignore
+      }
+    }
+  }
+}
+
+function getColumnNames(tableName) {
+  try {
+    const result = db.exec(`PRAGMA table_info(${tableName})`);
+    if (!result[0]) return [];
+    return result[0].values.map((row) => row[1]); // column name is index 1
+  } catch {
+    return [];
+  }
 }
 
 function save() {
@@ -115,8 +164,9 @@ function seedScholarships() {
   const stmt = db.prepare(`
     INSERT OR IGNORE INTO scholarships
       (name, provider, country, degree_level, field, funding_type, amount,
-       deadline, required_documents, eligibility_text, application_link, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active')
+       deadline, required_documents, eligibility_text, application_link, status,
+       gpa_fit, confidence, new_since_last_digest, documents_checklist)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Active', ?, ?, 'Y', ?)
   `);
 
   for (const item of seeds) {
@@ -124,6 +174,7 @@ function seedScholarships() {
       item.name, item.provider, item.country, item.degreeLevel,
       item.field, item.fundingType, item.amount, item.deadline,
       item.requiredDocuments, item.eligibilityText, item.applicationLink,
+      item.gpaFit || '', item.confidence || '', item.documentsChecklist || '',
     ]);
   }
   stmt.free();
@@ -215,8 +266,9 @@ function getScholarshipStats() {
       AND date(deadline) >= date('now')
   `)?.c || 0;
   const passed = queryOne("SELECT COUNT(*) as c FROM scholarships WHERE status = 'Deadline Passed'")?.c || 0;
+  const newCount = queryOne("SELECT COUNT(*) as c FROM scholarships WHERE new_since_last_digest = 'Y'")?.c || 0;
 
-  return { total, active, approaching, passed };
+  return { total, active, approaching, passed, newCount };
 }
 
 function upsertScholarship(s) {
@@ -224,8 +276,9 @@ function upsertScholarship(s) {
     INSERT INTO scholarships
       (name, provider, country, degree_level, field, funding_type, amount,
        deadline, required_documents, eligibility_text, eligibility_status,
-       why_it_fits, application_link, source_url, status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       why_it_fits, application_link, source_url, status,
+       gpa_fit, confidence, new_since_last_digest, documents_checklist)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(name, provider) DO UPDATE SET
       deadline = excluded.deadline,
       amount = excluded.amount,
@@ -233,7 +286,11 @@ function upsertScholarship(s) {
       eligibility_status = excluded.eligibility_status,
       why_it_fits = excluded.why_it_fits,
       application_link = excluded.application_link,
-      status = excluded.status
+      status = excluded.status,
+      gpa_fit = excluded.gpa_fit,
+      confidence = excluded.confidence,
+      new_since_last_digest = excluded.new_since_last_digest,
+      documents_checklist = excluded.documents_checklist
   `, [
     s.name || '', s.provider || '', s.country || '',
     s.degreeLevel || s.degree_level || '', s.field || '',
@@ -245,12 +302,16 @@ function upsertScholarship(s) {
     s.applicationLink || s.application_link || '',
     s.sourceUrl || s.source_url || '',
     s.status || 'Active',
+    s.gpaFit || s.gpa_fit || '',
+    s.confidence || '',
+    s.newSinceLastDigest || s.new_since_last_digest || 'Y',
+    s.documentsChecklist || s.documents_checklist || '',
   ]);
 }
 
 function markSent(ids) {
   for (const id of ids) {
-    execute("UPDATE scholarships SET last_sent = datetime('now') WHERE id = ?", [id]);
+    execute("UPDATE scholarships SET last_sent = datetime('now'), new_since_last_digest = 'N' WHERE id = ?", [id]);
   }
 }
 
@@ -289,6 +350,29 @@ function updateRunLog(id, data) {
   ]);
 }
 
+function getLastRun() {
+  return queryOne('SELECT * FROM run_log ORDER BY id DESC LIMIT 1');
+}
+
+function getRunStats() {
+  const lastRun = getLastRun();
+  const totalRuns = queryOne('SELECT COUNT(*) as c FROM run_log')?.c || 0;
+  return { lastRun, totalRuns };
+}
+
+// --- Digest log helpers ---
+
+function saveDigestLog(html, scholarshipCount, sentTo) {
+  execute(`
+    INSERT INTO digest_log (html, scholarship_count, sent_to)
+    VALUES (?, ?, ?)
+  `, [html, scholarshipCount, sentTo]);
+}
+
+function getLastDigest() {
+  return queryOne('SELECT * FROM digest_log ORDER BY id DESC LIMIT 1');
+}
+
 module.exports = {
   initDb,
   getDb,
@@ -301,5 +385,9 @@ module.exports = {
   markDeadlinesPassed,
   createRunLog,
   updateRunLog,
+  getLastRun,
+  getRunStats,
+  saveDigestLog,
+  getLastDigest,
   queryOne,
 };

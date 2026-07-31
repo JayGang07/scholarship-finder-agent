@@ -1,6 +1,7 @@
 /**
  * Eligibility matcher — combines deterministic filtering with AI-powered
  * judgment for fuzzy cases (GPA scale conversion, field relevance).
+ * v2: Now returns gpaFit (scale-converted comparison) and confidence label.
  */
 
 const AI_BASE_URL = process.env.AI_BASE_URL || 'https://api.openai.com/v1';
@@ -41,15 +42,17 @@ function deterministicFilter(scholarships, profile) {
 
 /**
  * AI eligibility check — handles GPA scale conversion, fuzzy field matching,
- * and generates the "why this fits you" line.
+ * generates "why this fits you" line, GPA fit text, and confidence label.
  */
 async function aiEligibilityCheck(scholarships, profile) {
   if (!AI_API_KEY || scholarships.length === 0) {
-    // No AI key — return all with generic eligibility status
+    // No AI key — return all with generic eligibility status + demo GPA fit
     return scholarships.map((s) => ({
       ...s,
-      eligibilityStatus: 'Unchecked',
-      whyItFits: `Matches your target for ${s.country} — review eligibility details.`,
+      eligibilityStatus: s.eligibilityStatus || s.eligibility_status || 'Unchecked',
+      whyItFits: s.whyItFits || s.why_it_fits || `Matches your target for ${s.country} — review eligibility details.`,
+      gpaFit: s.gpaFit || s.gpa_fit || '',
+      confidence: s.confidence || 'Check requirements',
     }));
   }
 
@@ -60,12 +63,14 @@ async function aiEligibilityCheck(scholarships, profile) {
 - Target Countries: ${profile.target_countries}
 - Funding Preference: ${profile.funding_type}
 
-For each scholarship below, assess eligibility and write a one-line "why this fits you" explanation. Be specific and punchy — reference the actual deadline, funding amount, or GPA match. Never write generic filler like "this may be a good fit."
+For each scholarship below, assess eligibility. Be specific — reference the actual deadline, funding amount, or GPA match.
 
 Return a JSON array where each object has:
 - name (string): the scholarship name (must match exactly)
 - eligibilityStatus (string): "Strong Match", "Partial Match", or "Unlikely Match"
 - whyItFits (string): one punchy sentence explaining the fit
+- gpaFit (string): Convert the student's ${profile.cgpa} to the scholarship's GPA scale and compare. Format: "Your [input] ≈ [converted] — [meets/below] the [requirement] minimum"
+- confidence (string): MUST be exactly one of: "Likely eligible", "Check requirements", "Not eligible"
 
 Scholarships to evaluate:
 ${JSON.stringify(scholarships.map((s) => ({
@@ -99,7 +104,7 @@ Return ONLY the JSON array.`;
 
     if (!response.ok) {
       console.warn(`[Matcher] AI API error: ${response.status}`);
-      return scholarships.map((s) => ({ ...s, eligibilityStatus: 'Unchecked', whyItFits: '' }));
+      return scholarships.map((s) => ({ ...s, eligibilityStatus: 'Unchecked', whyItFits: '', gpaFit: '', confidence: 'Check requirements' }));
     }
 
     const data = await response.json();
@@ -115,11 +120,13 @@ Return ONLY the JSON array.`;
         ...s,
         eligibilityStatus: ai.eligibilityStatus || 'Unchecked',
         whyItFits: ai.whyItFits || '',
+        gpaFit: ai.gpaFit || '',
+        confidence: ai.confidence || 'Check requirements',
       };
     });
   } catch (err) {
     console.warn(`[Matcher] AI eligibility check failed: ${err.message}`);
-    return scholarships.map((s) => ({ ...s, eligibilityStatus: 'Unchecked', whyItFits: '' }));
+    return scholarships.map((s) => ({ ...s, eligibilityStatus: 'Unchecked', whyItFits: '', gpaFit: '', confidence: 'Check requirements' }));
   }
 }
 

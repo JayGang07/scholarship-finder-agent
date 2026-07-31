@@ -67,12 +67,15 @@ async function runCycle() {
         eligibilityText: s.eligibility_text,
         applicationLink: s.application_link,
         sourceUrl: s.source_url,
+        gpaFit: s.gpa_fit,
+        confidence: s.confidence,
+        documentsChecklist: s.documents_checklist,
       }));
     }
 
     stats.newFound = allExtracted.length;
 
-    // 4. Match against profile
+    // 4. Match against profile (now returns gpaFit + confidence)
     const matched = await matchScholarships(allExtracted, profile);
     stats.matched = matched.length;
 
@@ -80,11 +83,12 @@ async function runCycle() {
     const { toInclude, skipped } = dedup(matched);
     stats.skipped = skipped;
 
-    // 6. Store results
+    // 6. Store results (Publish Gate — data written to persistent store)
     for (const s of toInclude) {
       db.upsertScholarship({
         ...s,
         status: s.status || 'Active',
+        newSinceLastDigest: s._isNew ? 'Y' : 'N',
       });
     }
 
@@ -92,6 +96,10 @@ async function runCycle() {
     if (toInclude.length > 0) {
       const html = composeDigest(toInclude, profile);
       const recipient = process.env.RECIPIENT_EMAIL || process.env.SMTP_USER || '';
+
+      // Store digest log regardless of send status
+      db.saveDigestLog(html, toInclude.length, recipient || 'console');
+
       if (recipient) {
         await sendDigest(recipient, html);
         db.markSent(toInclude.map((s) => {
