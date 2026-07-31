@@ -28,9 +28,15 @@ async function runCycle() {
   try {
     // 1. Filter sources by user's target countries
     const targetCountries = profile.target_countries.split(',').map((c) => c.trim().toLowerCase());
-    const relevantSources = sourcesData.filter((s) =>
+    let relevantSources = sourcesData.filter((s) =>
       targetCountries.some((c) => s.country.toLowerCase().includes(c) || c.includes(s.country.toLowerCase()))
     );
+    
+    // Fallback: if no specific sources match (e.g. user selected "Other"), scan ALL sources
+    if (relevantSources.length === 0) {
+      console.log('[Trigger] No specific sources matched target countries, defaulting to all sources');
+      relevantSources = sourcesData;
+    }
 
     // 2. Fetch all relevant sources
     const { successes, failures } = await fetchAllSources(relevantSources);
@@ -75,16 +81,16 @@ async function runCycle() {
 
     stats.newFound = allExtracted.length;
 
-    // 4. Match against profile (now returns gpaFit + confidence)
-    const matched = await matchScholarships(allExtracted, profile);
-    stats.matched = matched.length;
-
-    // 5. Dedup against existing tracker
-    const { toInclude, skipped } = dedup(matched);
+    // 4. Dedup against existing tracker (DO THIS FIRST to save AI tokens)
+    const { toInclude, skipped } = dedup(allExtracted);
     stats.skipped = skipped;
 
+    // 5. Match against profile (eligibility check) ONLY for the new/urgent ones
+    const matched = await matchScholarships(toInclude, profile);
+    stats.matched = matched.length;
+
     // 6. Store results (Publish Gate — data written to persistent store)
-    for (const s of toInclude) {
+    for (const s of matched) {
       db.upsertScholarship({
         ...s,
         status: s.status || 'Active',
@@ -92,17 +98,17 @@ async function runCycle() {
       });
     }
 
-    // 7. Compose and send digest
-    if (toInclude.length > 0) {
-      const html = composeDigest(toInclude, profile);
-      const recipient = process.env.RECIPIENT_EMAIL || process.env.SMTP_USER || '';
+    // 7. Compose and send digest (ALWAYS SEND, even if 0 results)
+    const html = composeDigest(matched, profile);
+    const recipient = process.env.RECIPIENT_EMAIL || process.env.SMTP_USER || '';
 
-      // Store digest log regardless of send status
-      db.saveDigestLog(html, toInclude.length, recipient || 'console');
+    // Store digest log regardless of send status
+    db.saveDigestLog(html, matched.length, recipient || 'console');
 
-      if (recipient) {
-        await sendDigest(recipient, html);
-        db.markSent(toInclude.map((s) => {
+    if (recipient) {
+      await sendDigest(recipient, html);
+      if (matched.length > 0) {
+        db.markSent(matched.map((s) => {
           // Find the ID from the DB after upsert
           const row = db.queryOne('SELECT id FROM scholarships WHERE name = ? AND provider = ?', [s.name, s.provider]);
           return row ? row.id : null;
@@ -113,7 +119,7 @@ async function runCycle() {
     stats.errorDetails = errorList.join('; ');
     db.updateRunLog(runId, stats);
 
-    return { success: true, runId, ...stats, digestSent: toInclude.length > 0 };
+    return { success: true, runId, ...stats, digestSent: true };
   } catch (err) {
     stats.errorDetails = err.message;
     stats.errors++;

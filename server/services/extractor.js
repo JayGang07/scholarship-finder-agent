@@ -70,11 +70,20 @@ async function extractScholarships(pageContent, sourceMetadata) {
 
     if (!Array.isArray(scholarships)) return [];
 
-    // Attach source metadata
+    // Attach source metadata and enforce null/undefined coalescing
     return scholarships.map((s) => ({
       ...s,
-      country: s.country || sourceMetadata.country,
-      provider: s.provider || sourceMetadata.provider,
+      name: s.name || 'Unnamed Scholarship',
+      country: s.country || sourceMetadata.country || 'Unknown',
+      provider: s.provider || sourceMetadata.provider || 'Unknown',
+      degreeLevel: s.degreeLevel || 'Not specified',
+      field: s.field || 'Not specified',
+      fundingType: s.fundingType || 'Not specified',
+      amount: s.amount || 'Not specified',
+      deadline: s.deadline || '',
+      documentsChecklist: s.documentsChecklist || '',
+      eligibilityText: s.eligibilityText || '',
+      applicationLink: s.applicationLink || '',
       sourceUrl: sourceMetadata.url,
     }));
   } catch (err) {
